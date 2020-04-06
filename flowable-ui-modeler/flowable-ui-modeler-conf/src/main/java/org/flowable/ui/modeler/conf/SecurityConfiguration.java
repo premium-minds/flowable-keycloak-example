@@ -12,9 +12,9 @@
  */
 package org.flowable.ui.modeler.conf;
 
-import java.util.Collections;
+import com.premiumminds.flowable.conf.KeycloakProperties;
+import com.premiumminds.flowable.filter.KeycloakCookieFilterRegistrationBean;
 
-import org.flowable.ui.common.filter.FlowableCookieFilterRegistrationBean;
 import org.flowable.ui.common.properties.FlowableCommonAppProperties;
 import org.flowable.ui.common.properties.FlowableRestAppProperties;
 import org.flowable.ui.common.security.ActuatorRequestMatcher;
@@ -61,10 +61,11 @@ public class SecurityConfiguration {
     protected RemoteIdmAuthenticationProvider authenticationProvider;
 
     @Bean
-    public FlowableCookieFilterRegistrationBean flowableCookieFilterRegistrationBean(RemoteIdmService remoteIdmService, FlowableCommonAppProperties properties) {
-        FlowableCookieFilterRegistrationBean filter = new FlowableCookieFilterRegistrationBean(remoteIdmService, properties);
+    public KeycloakCookieFilterRegistrationBean keycloakCookieFilterRegistrationBean(RemoteIdmService remoteIdmService, FlowableCommonAppProperties properties,
+            KeycloakProperties keycloakProperties) {
+        KeycloakCookieFilterRegistrationBean filter = new KeycloakCookieFilterRegistrationBean(remoteIdmService, properties, keycloakProperties);
         filter.addUrlPatterns("/app/*");
-        filter.setRequiredPrivileges(Collections.singletonList(DefaultPrivileges.ACCESS_MODELER));
+        //filter.setRequiredPrivileges(Collections.singletonList(DefaultPrivileges.ACCESS_MODELER));
         return filter;
     }
     
@@ -84,7 +85,7 @@ public class SecurityConfiguration {
     public static class FormLoginWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
 
         @Autowired
-        protected FlowableCookieFilterRegistrationBean flowableCookieFilterRegistrationBean;
+        protected KeycloakCookieFilterRegistrationBean keycloakCookieFilterRegistrationBean;
 
         @Autowired
         protected AjaxLogoutSuccessHandler ajaxLogoutSuccessHandler;
@@ -95,7 +96,7 @@ public class SecurityConfiguration {
                 .sessionManagement()
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                    .addFilterBefore(flowableCookieFilterRegistrationBean.getFilter(), UsernamePasswordAuthenticationFilter.class)
+                    .addFilterBefore(keycloakCookieFilterRegistrationBean.getFilter(), UsernamePasswordAuthenticationFilter.class)
                     .logout()
                         .logoutUrl("/app/logout")
                         .logoutSuccessHandler(ajaxLogoutSuccessHandler)
