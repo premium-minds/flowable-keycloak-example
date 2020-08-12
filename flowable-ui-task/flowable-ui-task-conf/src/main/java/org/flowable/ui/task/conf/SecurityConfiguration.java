@@ -12,6 +12,8 @@
  */
 package org.flowable.ui.task.conf;
 
+import com.premiumminds.flowable.conf.KeycloakProperties;
+import com.premiumminds.flowable.filter.KeycloakCookieFilterRegistrationBean;
 import java.util.Collections;
 
 import org.flowable.ui.common.filter.FlowableCookieFilterRegistrationBean;
@@ -57,13 +59,12 @@ public class SecurityConfiguration {
     @Autowired
     protected RemoteIdmAuthenticationProvider authenticationProvider;
 
-
     @Bean
-    public FlowableCookieFilterRegistrationBean flowableCookieFilterRegistration(RemoteIdmService remoteIdmService, FlowableCommonAppProperties properties) {
-        FlowableCookieFilterRegistrationBean registrationBean = new FlowableCookieFilterRegistrationBean(remoteIdmService, properties);
-        registrationBean.addUrlPatterns("/app/*");
-        registrationBean.setRequiredPrivileges(Collections.singletonList(DefaultPrivileges.ACCESS_TASK));
-        return registrationBean;
+    public KeycloakCookieFilterRegistrationBean keycloakCookieFilterRegistrationBean(RemoteIdmService remoteIdmService, FlowableCommonAppProperties properties,
+            KeycloakProperties keycloakProperties) {
+        KeycloakCookieFilterRegistrationBean filter = new KeycloakCookieFilterRegistrationBean(remoteIdmService, properties, keycloakProperties);
+        filter.addUrlPatterns("/app/*");
+        return filter;
     }
 
     @Autowired
@@ -86,7 +87,7 @@ public class SecurityConfiguration {
     public static class FormLoginWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
 
         @Autowired
-        protected FilterRegistrationBean flowableCookieFilterRegistration;
+        protected KeycloakCookieFilterRegistrationBean keycloakCookieFilterRegistrationBean;
 
         @Autowired
         protected AjaxLogoutSuccessHandler ajaxLogoutSuccessHandler;
@@ -97,7 +98,7 @@ public class SecurityConfiguration {
                     .sessionManagement()
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                     .and()
-                    .addFilterBefore(flowableCookieFilterRegistration.getFilter(), UsernamePasswordAuthenticationFilter.class)
+                    .addFilterBefore(keycloakCookieFilterRegistrationBean.getFilter(), UsernamePasswordAuthenticationFilter.class)
                     .logout()
                     .logoutUrl("/app/logout")
                     .logoutSuccessHandler(ajaxLogoutSuccessHandler)
